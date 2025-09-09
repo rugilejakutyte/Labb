@@ -1,7 +1,7 @@
 import sys
 
 class Node:
-    __slots__ = ("left", "right", "value")
+    __slots__ = ("left", "right", "value") # alla tre får dessa
     def __init__(self, left=0, right=0, value=0):
         self.left = left
         self.right = right
@@ -11,11 +11,11 @@ class PersistentArray:
     H = 31  # index upp till 2^31-1
 
     def __init__(self):
-        self.pool = [Node()]  # 0 = nollnod
+        self.all_nodes = [Node()]  # 0 = nollnod
 
     def _new_node(self, left, right, value):
-        self.pool.append(Node(left, right, value))
-        return len(self.pool) - 1
+        self.all_nodes.append(Node(left, right, value))
+        return len(self.all_nodes) - 1
 
     def newarray(self) -> int:
         return 0
@@ -26,16 +26,16 @@ class PersistentArray:
             if index == 0:
                 return 0
             b = (i >> bit) & 1
-            index = self.pool[index].right if b else self.pool[index].left
-        return 0 if index == 0 else self.pool[index].value
+            index = self.all_nodes[index].right if b else self.all_nodes[index].left
+        return 0 if index == 0 else self.all_nodes[index].value
 
     def set(self, root: int, i: int, value: int) -> int:
         def set_rec(node_id: int, bit: int) -> int:
             if bit < 0:
                 return self._new_node(0, 0, value)
 
-            left_id  = self.pool[node_id].left  if node_id != 0 else 0
-            right_id = self.pool[node_id].right if node_id != 0 else 0
+            left_id  = self.all_nodes[node_id].left  if node_id != 0 else 0
+            right_id = self.all_nodes[node_id].right if node_id != 0 else 0
 
             if ((i >> bit) & 1) == 0:
                 new_left = set_rec(left_id, bit - 1)
