@@ -1,11 +1,11 @@
 import sys
 
 class Node:
-    __slots__ = ("left", "right", "value") # alla tre får dessa
+    __slots__ = ("left", "right", "value") # alla får dessa tre,
     def __init__(self, left=0, right=0, value=0):
-        self.left = left
-        self.right = right
-        self.value = value
+        self.left = left #pekare till vänsta barnet
+        self.right = right #perkare högra barnet
+        self.value = value #värde (i blad)
 
 class PersistentArray:
     H = 31  # index upp till 2^31-1
@@ -13,36 +13,37 @@ class PersistentArray:
     def __init__(self):
         self.all_nodes = [Node()]  # 0 = nollnod
 
-    def _new_node(self, left, right, value):
+    def new_node(self, left, right, value): #skapar ny nod
         self.all_nodes.append(Node(left, right, value))
         return len(self.all_nodes) - 1
 
-    def newarray(self) -> int:
+    def newarray(self) -> int: #Roten är nollnoden
         return 0
 
-    def get(self, root: int, i: int) -> int:
-        index = root
-        for bit in range(self.H - 1, -1, -1):
+    def get(self, root: int, i: int) -> int: #hämtar värdet på plats i i arrayen som börjar vid root
+        index = root 
+        for bit in range(self.H - 1, -1, -1): #går från bit 30 till 0
             if index == 0:
-                return 0
-            b = (i >> bit) & 1
-            index = self.all_nodes[index].right if b else self.all_nodes[index].left
-        return 0 if index == 0 else self.all_nodes[index].value
+                return 0 #om tom gren
+            b = (i >> bit) & 1 #Väljer ut en bit, 0 vänster 1 höger
+            index = self.all_nodes[index].right if b else self.all_nodes[index].left #Flyttar trädet till rätt barn
+        return 0 if index == 0 else self.all_nodes[index].value #returnerar value på bladet
 
-    def set(self, root: int, i: int, value: int) -> int:
-        def set_rec(node_id: int, bit: int) -> int:
+    #Bygger en ny gren från roten till bladet, alla andra grenar består samma
+    def set(self, root: int, i: int, value: int) -> int: #Sätter värdet på index i
+        def set_rec(current_index: int, bit: int) -> int: #rekursiv hjälp
             if bit < 0:
-                return self._new_node(0, 0, value)
-
-            left_id  = self.all_nodes[node_id].left  if node_id != 0 else 0
-            right_id = self.all_nodes[node_id].right if node_id != 0 else 0
+                return self.new_node(0, 0, value) #nytt blad
+            # Om vi inte är på nollnoden, hämta höger vänster barn
+            left_id  = self.all_nodes[current_index].left  if current_index != 0 else 0 
+            right_id = self.all_nodes[current_index].right if current_index != 0 else 0
 
             if ((i >> bit) & 1) == 0:
                 new_left = set_rec(left_id, bit - 1)
-                return self._new_node(new_left, right_id, 0)
+                return self.new_node(new_left, right_id, 0)
             else:
                 new_right = set_rec(right_id, bit - 1)
-                return self._new_node(left_id, new_right, 0)
+                return self.new_node(left_id, new_right, 0)
 
         return set_rec(root, self.H - 1)
 
@@ -68,37 +69,46 @@ def main():
     pa = PersistentArray()
     vs = Versions(pa)
 
-    data = sys.stdin.read().strip().split()
-    if not data:
-        # Liten demo om man kör utan input
-        v0 = vs.new()                      # tom array → v0
-        v1 = vs.set(v0, 1, 8)              # b[1]=8     → v1
-        v2 = vs.set(v1, 3, 1)              # b[3]=1     → v2
-        v3 = vs.set(v2, 4, 13)             # b[4]=13    → v3
-        v4 = vs.set(v3, 5, 12)             # b[5]=12    → v4
-        v5 = vs.set(v4, 8, 24)             # b[8]=24    → v5
-        # Läsningar
-        print(v0, v1, v2, v3, v4, v5)      # versions-id
-        print(vs.get(v5, 4))               # 13
-        print(vs.get(v5, 10))              # 0
-        print(vs.get(v3, 8))               # 0
-        return
+    current_ver = vs.new()
 
-    it = iter(data)
+    #data = sys.stdin.read().strip().split()
+    #if not data:
+    #    v0 = vs.new()                      # tom array → v0
+    #    v1 = vs.set(v0, 1, 8)              # b[1]=8     → v1
+    #    v2 = vs.set(v1, 3, 1)              # b[3]=1     → v2
+    #    v3 = vs.set(v2, 4, 13)             # b[4]=13    → v3
+    #    v4 = vs.set(v3, 5, 12)             # b[5]=12    → v4
+    #    v5 = vs.set(v4, 8, 24)             # b[8]=24    → v5
+    #    # Läsningar
+    #    print(v0, v1, v2, v3, v4, v5)      # versions-id
+    #    print(vs.get(v5, 4))               # 13
+    #    print(vs.get(v5, 10))              # 0
+    #    print(vs.get(v3, 8))               # 0
+    #    return
+#
+    #it = iter(data)
     out_lines = []
-    for token in it:
-        if token == "new":
-            out_lines.append(str(vs.new()))
-        elif token == "set":
-            A = int(next(it)); i = int(next(it)); val = int(next(it))
-            out_lines.append(str(vs.set(A, i, val)))
-        elif token == "get":
-            A = int(next(it)); i = int(next(it))
-            out_lines.append(str(vs.get(A, i)))
-        else:
-            # Ignorera/hantera okända kommandon
-            pass
-    sys.stdout.write("\n".join(out_lines))
+    for line in sys.stdin:
+        parts = line.strip().split()
+        if not parts:
+            continue
+        cmd = parts[0]
+        if cmd == "set":
+            i = int(parts[1])
+            val = int(parts[2])
+            current_ver = vs.set(current_ver, i, val)
+        elif cmd == "get":
+            i = int(parts[1])
+            out_lines.append(str(vs.get(current_ver, i)))
+        elif cmd == "unset":
+            # Ta bort senaste versionen
+            if len(vs.roots) > 1:
+                vs.roots.pop()
+                current_ver = len(vs.roots) - 1  #indexet till senaste versionen
+
+
+    sys.stdout.write("\n".join(out_lines) + "\n")
 
 if __name__ == "__main__":
     main()
+
