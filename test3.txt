@@ -1,0 +1,5 @@
+set 3 17
+set 3 4711
+get 3
+unset
+get 3

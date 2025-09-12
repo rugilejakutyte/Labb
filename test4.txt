@@ -1,0 +1,11 @@
+set 1 5
+set 2 10
+set 1 20
+get 1
+get 2
+unset
+get 1
+get 2
+unset
+get 1
+get 2

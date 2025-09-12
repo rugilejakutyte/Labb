@@ -1,0 +1,5 @@
+set 2 10
+set 5 20
+get 2
+get 5
+get 0
